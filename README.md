@@ -1,36 +1,178 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 心动计划局｜Date Box
 
-## Getting Started
+为两个人生成一场带有惊喜、任务和回忆的约会计划。
 
-First, run the development server:
+Date Box 是一款共用设备完成的双人约会互动游戏。两个人依次选择偏好、回答默契问题，再开启一份包含路线、隐藏任务与临时彩蛋的约会计划，最后把当天内容保存成一张纪念回忆卡。
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+当前稳定版本为 **v1.0.0**：单设备模式已稳定，可通过 CloudBase 国内静态托管部署；微信内置浏览器可直接打开部署链接并完成完整体验。
+
+## 项目截图
+
+推荐展示欢迎页、心情选择、默契结果、盲盒、约会计划和回忆卡六个关键画面。当前仓库不放置未经真实浏览器验收的截图；待运行环境允许访问 localhost 并完成目标视口检查后，再将截图加入 `docs/screenshots/`。
+
+## 项目背景
+
+很多约会灵感工具只给出地点清单，选择成本依然留给用户；常见默契测试又容易停留在“答题—得分”，没有把结果转化为能共同完成的体验。Date Box 将偏好表达、双人默契、计划揭晓、现场任务和事后纪念串成一条完整流程。
+
+## 用户痛点
+
+- 想约会却不想在大量选项中反复讨论。
+- 希望了解彼此期待，又不想面对正式问卷的压力。
+- 计划往往只有行程，没有能制造共同记忆的互动。
+- 一次约会结束后，缺少轻量且适合保存的纪念载体。
+
+## 产品目标
+
+- 在三秒内说明产品用途，并让两个人自然开始共同选择。
+- 用轻游戏方式汇合两个人的偏好，不把低默契描述成失败。
+- 生成容易扫描、可以直接执行的约会路线与任务。
+- 用可截图的纪念票据收束体验，并在单设备上可靠恢复进度。
+
+## 核心体验流程
+
+1. 阅读玩法并开启计划。
+2. 选择当下心情与约会条件。
+3. 玩家 A 完成五题，交接设备后由玩家 B 完成五题。
+4. 查看默契结果与共同、互补期待。
+5. 长按开启盲盒，揭晓约会计划。
+6. 更换或保存计划，开始约会并完成、跳过任务或触发彩蛋。
+7. 填写最喜欢的瞬间与想对 TA 说的话，保存或复制纪念文字。
+8. 刷新后恢复本地进度，或确认重新开始并清空数据。
+
+## 主要功能
+
+- 六种心情与时间、预算、场景偏好选择。
+- 双人分段默契问答、设备交接与结果汇合。
+- 长按盲盒、提前松开取消和清晰的开启进度。
+- 基于双方选择生成计划，支持有限次数的换一换。
+- 路线、常规任务、隐藏任务和临时彩蛋进度管理。
+- 实时回忆卡预览、保存、复制与 Clipboard 降级提示。
+- 版本化 localStorage 自动保存、损坏数据恢复与重新开始确认。
+- 键盘操作、焦点管理和 `prefers-reduced-motion` 支持。
+
+## 手机端与微信浏览器体验
+
+- Mobile-first 布局，主流程针对单手操作、动态视口和安全区域优化。
+- Welcome、心情选择、默契结果、盲盒、路线与回忆卡均有独立移动端信息层级。
+- 已适配微信内置浏览器的安全区域、触控长按、文本输入与静态资源加载场景。
+- 生产链接可在微信中直接打开；进度仍仅保存在当前浏览器的本地存储中。
+
+## 设计理念
+
+视觉以奶油底色、克制的粉紫、双轨迹汇合和纪念票据为核心。玻璃质感只用于需要层次的区域，不把所有内容做成相同白色卡片；按钮、信息层级和动效在整条流程中保持一致。文案使用性别中立的“TA、你们、对方”，默契差异被表达为互补期待或新的探索方向。
+
+## 技术栈
+
+- Next.js 16 App Router
+- React 19 与 TypeScript
+- Tailwind CSS 4
+- Framer Motion
+- Lucide React
+- localStorage（版本校验、自动保存和刷新恢复）
+- ESLint 与 Node.js 边界测试脚本
+
+## 项目结构
+
+```text
+src/
+├─ app/                 # 根布局、元数据、全局样式和应用图标
+├─ components/
+│  ├─ date-game/        # 完整流程页面与交互组件
+│  ├─ layout/           # 品牌页头和页面外壳
+│  └─ ui/               # 按钮、面板、提示和确认对话框
+├─ data/                # 计划、问题与彩蛋数据
+├─ hooks/               # 流程状态、本地持久化和长按手势
+├─ lib/                 # 匹配、计划生成、校验与浏览器边界工具
+└─ types/               # 领域类型
+docs/                    # 产品、设计系统与阶段状态
+scripts/                 # 边界与状态测试
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 本地运行
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+建议使用当前 Node.js LTS 版本：
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm install
+npm run dev
+```
 
-## Learn More
+打开 `http://localhost:3000`。仓库不提供或虚构线上访问地址。
 
-To learn more about Next.js, take a look at the following resources:
+## 质量检查
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm run lint
+npx tsc --noEmit
+npm run test:plans
+npm run test:active-date
+npm run test:memory-storage
+npm run test:browser-boundaries
+npm run test:flow-boundaries
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 静态导出
 
-## Deploy on Vercel
+项目已配置为 Next.js 纯静态导出。执行：
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npm run build
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+构建完成后，站点文件位于项目根目录的 `out/`：
+
+- `out/index.html` 是首页入口。
+- `out/_next/` 包含带哈希的 JavaScript、CSS 与其他构建资源。
+- `out/icon.svg`、`out/404.html` 等文件可直接交给静态网站托管平台。
+
+本地必须用静态服务器验证 `out/`，不要用 `next dev` 代替：
+
+```bash
+npx serve out -l 4173
+```
+
+打开 `http://localhost:4173`。启用 `trailingSlash` 后，托管平台应保留目录式路径与其中的 `index.html`。
+
+## CloudBase 静态托管部署
+
+当前稳定版已部署到 CloudBase 国内静态托管。每次发布按以下流程执行：
+
+1. 在本地运行 `npm run build`，生成 `out/`。
+2. 将 `out/` 的内容上传到 CloudBase 静态网站根目录。
+3. 保持默认首页为 `index.html`、错误页为 `404.html`，并保留目录式路由下的 `index.html`。
+4. 在 HTTPS 部署链接与微信内置浏览器中打开首页，走通单设备流程。
+
+仓库不保存 CloudBase 项目 ID、访问令牌、上传凭据或任何私有部署参数。
+
+## 静态版本限制
+
+- 站点没有运行时 Next.js 服务器，不能使用 Server Actions、依赖请求参数的 Route Handler、cookies、headers、middleware/proxy、服务端重定向或 rewrite、ISR 与默认图片优化服务。
+- 计划、问题与任务均随构建产物发布；内容变化需要重新执行 `npm run build` 并部署新的 `out/`。
+- 进度仅保存在当前浏览器的 localStorage，无法跨设备或跨浏览器同步；清理站点数据会丢失进度。
+- Clipboard 能力受浏览器权限和安全上下文影响，生产环境应使用 HTTPS；不可用时应用会提供手动复制降级。
+- 当前应用是单页面客户端状态机，不提供服务端 API、登录、云同步或动态服务端路由。
+
+## 当前版本范围
+
+v1.0.0 覆盖从欢迎页到回忆卡的完整单设备流程，以及本地状态恢复、边界保护、键盘基础操作和 reduced-motion。所有计划内容来自仓库内静态数据，不依赖远程服务。
+
+## 后续异步邀请规划
+
+v1.1.0 将探索异步邀请模式：由一方创建邀请、对方通过链接完成独立选择，再汇合为共同计划。该功能尚未开始开发，不属于 v1.0.0，也不会影响当前单设备模式的稳定使用。
+
+后续候选方向：
+
+- 登录与跨设备同步。
+- 数据库与云端回忆收藏。
+- 地图、地点推荐和真实商家信息。
+- 异步邀请链接、真实双人房间与实时协作。
+- 服务端图片生成或可选的实体票据导出。
+
+以上方向均不属于 v1.0.0，也未在代码中预埋空功能。
+
+## 已知限制
+
+- 数据只保存在当前浏览器的 localStorage，清理站点数据或更换设备后不会保留。
+- 计划与任务为本地静态内容，不包含地图导航、营业时间或实时地点信息。
+- 复制能力取决于浏览器 Clipboard 权限；不可用时会展示可手动选择的纪念文字。
+- 当前受执行环境的企业网络策略限制，尚未完成 localhost 的真实浏览器视口验收；自动测试和生产构建不能替代这项视觉检查。
