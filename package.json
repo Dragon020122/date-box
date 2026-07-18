@@ -11,7 +11,8 @@
     "test:active-date": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test-active-date.mjs",
     "test:memory-storage": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test-memory-storage.mjs",
     "test:browser-boundaries": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test-browser-boundaries.mjs",
-    "test:flow-boundaries": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test-flow-boundaries.mjs"
+    "test:flow-boundaries": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test-flow-boundaries.mjs",
+    "test:async-invite": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test-async-invite.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",

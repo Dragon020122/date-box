@@ -1,5 +1,28 @@
 # Date Box Development Status
 
+## Invite Stage 1A：数据协议与编解码
+
+- 已新增异步邀请与结果 payload 类型、48 小时默认有效期，以及独立存储键 `date-box-async-session-v1`；普通模式继续使用 `date-box-game-state-v1`。
+- 已实现 JSON + UTF-8 + Base64 URL-safe 编解码、固定 `#invite=v1.*` / `#result=v1.*` Hash 协议、显式 base URL 链接生成和原 Hash 移除。
+- 已对字段完整性、昵称长度、五题答案、偏好 ID、计划 ID、版本、时间与过期状态进行入口前校验；错误只返回用户可读原因。
+- 已新增 `test:async-invite`，覆盖中英文昵称、空昵称、损坏数据、过期数据、错误版本、非法答案、超长昵称和正常结果 payload。
+- 本阶段尚未开发玩家 A / 玩家 B 正式异步页面，也未写入任何异步会话数据。
+
+## Invite Stage 1B：Hash 入口识别
+
+- 已新增顶层 `AppEntry` 客户端边界；服务端预渲染与首次客户端渲染都使用相同加载占位，挂载后才读取 `window.location.hash`，避免 hydration 错误。
+- 无 Hash 和无关 Hash 继续挂载现有 `DateGame`，因此原有 localStorage 恢复逻辑与欢迎页到回忆卡的单设备流程保持不变。
+- 有效 `invite`、有效 `result`、过期邀请和无效链接分别显示 Stage 1 占位内容；尚未开发正式异步玩家页面。
+- 入口识别只读取 URL，不写入 `date-box-game-state-v1` 或预留的 `date-box-async-session-v1`。
+
+## Invite Stage 1 验证
+
+- `npm run test:async-invite`：19 项通过，覆盖中英文昵称、空/超长昵称、损坏 Base64、损坏 JSON、过期数据、错误版本、答案数量、非法答案 ID、非法计划 ID、URL 原 Hash 移除与正常结果还原。
+- 原有 `test:plans`、`test:active-date`、`test:memory-storage`、`test:browser-boundaries`、`test:flow-boundaries` 全部通过，单设备状态、恢复和完整流程边界未回归。
+- `npm run lint`：通过；`npx tsc --noEmit`：通过。
+- 两个开发阶段均执行 `npm run build` 并通过；最终 Next.js 16.2.10 静态生成 4/4 页面，`out/index.html` 已生成。
+- 本阶段未进行真实浏览器视觉验收，因此不声明完成 390×844 或 1440×900 视口检查；占位 UI 的正式视觉精修不在 Invite Stage 1 范围内。
+
 ## Current stage
 
 当前版本：v1.0.0

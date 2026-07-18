@@ -1,5 +1,19 @@
 # 心动计划局 Date Box — 产品规格
 
+## Invite Stage 1：异步邀请入口协议
+
+异步邀请 v1.1.0 的第一阶段只建立静态链接协议和入口识别，不包含正式的邀请创建、对方答题或结果展示页面。普通单设备流程继续完整运行，且继续使用 `date-box-game-state-v1` 保存进度；异步会话预留独立键 `date-box-async-session-v1`，两类进度不得互相覆盖。
+
+- 邀请 Hash：`#invite=v1.<encodedPayload>`；结果 Hash：`#result=v1.<encodedPayload>`。
+- payload 使用 JSON、UTF-8 与 Base64 URL-safe 编码，可安全包含中文昵称；链接生成前移除当前 URL 的原有 Hash。
+- 邀请默认有效期为 48 小时；昵称最多 12 个字符，邀请人昵称不能为空。
+- 邀请人和对方答案都必须刚好包含五项，并逐题使用 `src/data/quiz-questions.ts` 中已有的合法选项 ID。
+- 偏好必须使用现有 mood、time、budget、distance 与 relationship ID；结果计划必须使用 `src/data/date-plans.ts` 中已有的计划 ID。
+- 页面挂载后识别 Hash。无 Hash 或无关 Hash 进入现有普通模式；有效邀请、有效结果、过期数据和无效数据分别进入清晰占位状态。
+- Base64、JSON、版本、字段、ID 或时间校验失败的数据不得进入游戏状态机，页面只显示用户可理解的错误信息，不显示技术堆栈。
+
+本阶段不新增认证、数据库、API、实时房间或正式异步玩家页面。
+
 ## 1. 产品定位
 
 心动计划局 Date Box 是一款同设备、双人轮流参与的约会计划互动游戏。它通过心情与条件选择、五道默契问答、温和的结果反馈和长按开盒仪式，为两个人生成一套现实可执行的本地约会计划。
