@@ -65,7 +65,7 @@ assert.deepEqual(decodeInvitePayload(encodeInvitePayload(englishInvite), now), {
   payload: englishInvite,
 });
 
-assert.equal(validateInvitePayload({ ...chineseInvite, hostName: "" }, now).status, "invalid");
+assert.equal(validateInvitePayload({ ...chineseInvite, hostName: "" }, now).status, "valid");
 assert.equal(parseInviteFromHash("#invite=v1.%%%", now).status, "invalid");
 assert.equal(parseInviteFromHash("#invite=v1.bm90LWpzb24", now).status, "invalid");
 assert.equal(

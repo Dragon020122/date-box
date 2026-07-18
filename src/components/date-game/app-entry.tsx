@@ -3,11 +3,23 @@
 import { CircleAlert, Clock3, Link2, Sparkles } from "lucide-react";
 import { useEffect, useState, type ComponentType } from "react";
 
+import { AsyncHostFlow } from "@/components/async-invite/async-host-flow";
 import { DateGame } from "@/components/date-game/date-game";
 import { GameLoadingScreen } from "@/components/date-game/game-loading-screen";
 import { AppShell } from "@/components/layout/app-shell";
+import { useLocalStorage } from "@/hooks/use-local-storage";
 import { parseInviteFromHash, parseResultFromHash } from "@/lib/async-invite-codec";
-import type { EntryMode } from "@/types/async-invite";
+import {
+  createInitialAsyncHostSessionState,
+  hasMeaningfulAsyncHostSession,
+  parseAsyncHostSession,
+  serializeAsyncHostSession,
+} from "@/lib/async-host-session";
+import {
+  ASYNC_INVITE_STORAGE_KEY,
+  type AsyncHostSessionState,
+  type EntryMode,
+} from "@/types/async-invite";
 
 type EntryState =
   | { status: "loading" }
@@ -90,6 +102,12 @@ function resolveEntry(hash: string): EntryState {
 
 export function AppEntry() {
   const [entry, setEntry] = useState<EntryState>({ status: "loading" });
+  const [selectedMode, setSelectedMode] = useState<"normal" | "async-host" | null>(null);
+  const asyncStorage = useLocalStorage<AsyncHostSessionState>({
+    key: ASYNC_INVITE_STORAGE_KEY,
+    parse: parseAsyncHostSession,
+    serialize: serializeAsyncHostSession,
+  });
 
   useEffect(() => {
     const readHashTimer = window.setTimeout(() => {
@@ -99,7 +117,7 @@ export function AppEntry() {
     return () => window.clearTimeout(readHashTimer);
   }, []);
 
-  if (entry.status === "loading") {
+  if (entry.status === "loading" || !asyncStorage.isHydrated) {
     return (
       <AppShell>
         <GameLoadingScreen />
@@ -108,7 +126,28 @@ export function AppEntry() {
   }
 
   if (entry.status === "normal") {
-    return <DateGame />;
+    const restoredAsyncState =
+      asyncStorage.status === "restored" &&
+      asyncStorage.storedValue &&
+      hasMeaningfulAsyncHostSession(asyncStorage.storedValue)
+        ? asyncStorage.storedValue
+        : null;
+    const showAsyncHost =
+      selectedMode === "async-host" ||
+      (selectedMode === null && restoredAsyncState !== null);
+
+    if (showAsyncHost) {
+      return (
+        <AsyncHostFlow
+          initialState={restoredAsyncState ?? createInitialAsyncHostSessionState()}
+          saveState={asyncStorage.save}
+          clearState={asyncStorage.clear}
+          onBackHome={() => setSelectedMode("normal")}
+        />
+      );
+    }
+
+    return <DateGame onCreateInvite={() => setSelectedMode("async-host")} />;
   }
 
   if (entry.status === "invite") {

@@ -2,6 +2,24 @@ import type { DatePreferences } from "@/types/date-game";
 
 export type EntryMode = "normal" | "async-invite" | "async-result";
 
+export type AsyncHostStep =
+  | "create-intro"
+  | "mood"
+  | "preferences"
+  | "host-quiz"
+  | "generating"
+  | "share-placeholder";
+
+export interface AsyncHostSessionState {
+  step: AsyncHostStep;
+  hostName: string;
+  guestName: string;
+  preferences: DatePreferences;
+  hostAnswers: string[];
+  inviteUrl: string | null;
+  inviteCreatedAt: number | null;
+}
+
 export interface AsyncInvitePayload {
   v: 1;
   id: string;

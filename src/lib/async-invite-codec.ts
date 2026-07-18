@@ -57,12 +57,21 @@ function isTimestamp(value: unknown): value is number {
   return Number.isSafeInteger(value) && typeof value === "number" && value >= 0;
 }
 
-function validateName(value: unknown, label: string, optional = false): string | null {
+function validateName(
+  value: unknown,
+  label: string,
+  optional = false,
+  allowEmpty = false,
+): string | null {
   if (optional && value === undefined) {
     return null;
   }
 
-  if (typeof value !== "string" || value.trim().length === 0) {
+  if (typeof value !== "string") {
+    return `${label}不能为空`;
+  }
+
+  if (!allowEmpty && value.trim().length === 0) {
     return `${label}不能为空`;
   }
 
@@ -111,12 +120,12 @@ function validateInviteStructure(value: unknown): ValidationResult<AsyncInvitePa
     return { ok: false, reason: "邀请失效时间无效" };
   }
 
-  const hostNameError = validateName(value.hostName, "邀请人昵称");
+  const hostNameError = validateName(value.hostName, "邀请人昵称", false, true);
   if (hostNameError) {
     return { ok: false, reason: hostNameError };
   }
 
-  const guestNameError = validateName(value.guestName, "对方昵称", true);
+  const guestNameError = validateName(value.guestName, "对方昵称", true, true);
   if (guestNameError) {
     return { ok: false, reason: guestNameError };
   }

@@ -6,13 +6,30 @@
 
 - 邀请 Hash：`#invite=v1.<encodedPayload>`；结果 Hash：`#result=v1.<encodedPayload>`。
 - payload 使用 JSON、UTF-8 与 Base64 URL-safe 编码，可安全包含中文昵称；链接生成前移除当前 URL 的原有 Hash。
-- 邀请默认有效期为 48 小时；昵称最多 12 个字符，邀请人昵称不能为空。
+- 邀请默认有效期为 48 小时；双方称呼均可选，填写时最多 12 个字符。
 - 邀请人和对方答案都必须刚好包含五项，并逐题使用 `src/data/quiz-questions.ts` 中已有的合法选项 ID。
 - 偏好必须使用现有 mood、time、budget、distance 与 relationship ID；结果计划必须使用 `src/data/date-plans.ts` 中已有的计划 ID。
 - 页面挂载后识别 Hash。无 Hash 或无关 Hash 进入现有普通模式；有效邀请、有效结果、过期数据和无效数据分别进入清晰占位状态。
 - Base64、JSON、版本、字段、ID 或时间校验失败的数据不得进入游戏状态机，页面只显示用户可理解的错误信息，不显示技术堆栈。
 
 本阶段不新增认证、数据库、API、实时房间或正式异步玩家页面。
+
+## Invite Stage 2：玩家 A 创建邀请
+
+普通 Welcome 页面提供两种主次明确的入口：视觉主入口“邀请TA一起计划”进入跨设备异步创建，次入口“一起用这部手机”继续现有完整单设备流程。移动端两张入口卡纵向排列，桌面端可并排展示。
+
+玩家 A 创建流程固定为：
+
+```text
+create-intro → mood → preferences → host-quiz → generating → share-placeholder
+```
+
+- 双方称呼均可选，输入前后空格会被移除，每项最多 12 个字符；页面明确提示不要填写手机号、微信号或其他敏感信息。
+- 心情、时间、预算、行动范围、关系阶段和五道问答复用现有合法 ID 与选择组件；玩家 A 的答案在 TA 完成前不展示。
+- 生成时优先使用 `crypto.randomUUID()`，不支持时使用 `crypto.getRandomValues()` 生成 UUID v4；创建时间使用当前时间，默认 48 小时失效。
+- 完成后调用 `createInviteUrl`，将邀请链接、创建时间、当前步骤、称呼、偏好和玩家 A 答案保存在 `date-box-async-session-v1`。
+- 刷新后恢复尚未完成的创建步骤或分享占位；普通模式 `date-box-game-state-v1` 不被读取、覆盖或清除。
+- Stage 2 只提供生成中与分享页占位，不包含正式分享卡、复制/系统分享能力或玩家 B 页面。
 
 ## 1. 产品定位
 

@@ -19,6 +19,13 @@ interface QuizScreenProps {
   onAnswer: (questionIndex: number, answerId: string) => void;
   onExit: () => void;
   onComplete: () => void;
+  copy?: Partial<{
+    label: string;
+    title: string;
+    description: string;
+    exitLabel: string;
+    completeLabel: string;
+  }>;
 }
 
 const playerCopy: Record<
@@ -46,6 +53,7 @@ export function QuizScreen({
   onAnswer,
   onExit,
   onComplete,
+  copy: copyOverrides,
 }: QuizScreenProps) {
   const [questionIndex, setQuestionIndex] = useState(() =>
     Math.min(
@@ -55,7 +63,7 @@ export function QuizScreen({
   );
   const navigationLockedRef = useRef(false);
   const shouldReduceMotion = useReducedMotion();
-  const copy = playerCopy[player];
+  const copy = { ...playerCopy[player], ...copyOverrides };
   const question = quizQuestions[questionIndex];
   const selectedAnswer = answers[questionIndex] ?? "";
   const isLastQuestion = questionIndex === quizQuestions.length - 1;
@@ -182,9 +190,9 @@ export function QuizScreen({
                       "border-white/80 bg-white/42 text-text-secondary transition-[transform,border-color,background-color,color,box-shadow] duration-200",
                       "hover:border-pink-200 hover:bg-white/65 active:scale-[0.99] active:bg-pink-50/70",
                       selected &&
-                        player === "playerA"
+                        (player === "playerA"
                           ? "border-pink-400 bg-pink-50/90 text-text-primary shadow-[0_14px_36px_rgba(105,62,84,0.12)]"
-                          : "border-purple-400 bg-purple-100/75 text-text-primary shadow-[0_14px_36px_rgba(105,62,84,0.1)]",
+                          : "border-purple-400 bg-purple-100/75 text-text-primary shadow-[0_14px_36px_rgba(105,62,84,0.1)]"),
                     )}
                   >
                     {option.label}
@@ -214,7 +222,7 @@ export function QuizScreen({
           disabled={!selectedAnswer}
           className="w-full sm:w-auto"
         >
-          {isLastQuestion ? "藏好我的答案" : "下一题"}
+          {isLastQuestion ? copy.completeLabel ?? "藏好我的答案" : "下一题"}
           <ArrowRight aria-hidden="true" className="size-4.5" />
         </PrimaryButton>
       </MobileActionBar>

@@ -69,6 +69,13 @@ interface PreferencesScreenProps {
   onRelationshipChange: (value: RelationshipId) => void;
   onBack: () => void;
   onContinue: () => void;
+  copy?: Partial<{
+    eyebrow: string;
+    title: string;
+    description: string;
+    backLabel: string;
+    continueLabel: string;
+  }>;
 }
 
 export function PreferencesScreen({
@@ -79,6 +86,7 @@ export function PreferencesScreen({
   onRelationshipChange,
   onBack,
   onContinue,
+  copy,
 }: PreferencesScreenProps) {
   type GroupKey = "time" | "budget" | "distance" | "relationship";
   const groupOrder: GroupKey[] = ["time", "budget", "distance", "relationship"];
@@ -108,16 +116,16 @@ export function PreferencesScreen({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-semibold tracking-[0.18em] text-pink-600 sm:text-sm">
-            02 · LITTLE DETAILS
+            {copy?.eyebrow ?? "02 · LITTLE DETAILS"}
           </p>
           <h1
             id="preferences-title"
             className="mt-2 max-w-3xl text-[clamp(1.8rem,8vw,3rem)] font-semibold leading-[1.15] tracking-[-0.035em] text-text-primary sm:mt-4"
           >
-            给今晚加一点小小设定
+            {copy?.title ?? "给今晚加一点小小设定"}
           </h1>
           <p className="mt-2 text-sm leading-6 text-text-secondary sm:mt-3 sm:text-base sm:leading-7">
-            不必想得太复杂，只选最接近你们今晚的答案。
+            {copy?.description ?? "不必想得太复杂，只选最接近你们今晚的答案。"}
           </p>
         </div>
 
@@ -207,14 +215,14 @@ export function PreferencesScreen({
       <MobileActionBar className="mt-4 sm:mt-4">
         <SecondaryButton onClick={onBack} className="w-full sm:w-auto">
           <ArrowLeft aria-hidden="true" className="size-4.5" />
-          返回心情选择
+          {copy?.backLabel ?? "返回心情选择"}
         </SecondaryButton>
         <PrimaryButton
           onClick={onContinue}
           disabled={summary === null}
           className="w-full sm:w-auto"
         >
-          进入默契测试
+          {copy?.continueLabel ?? "进入默契测试"}
           <ArrowRight aria-hidden="true" className="size-4.5" />
         </PrimaryButton>
       </MobileActionBar>

@@ -1,5 +1,27 @@
 # Date Box Development Status
 
+## Invite Stage 2A：主持人会话基础
+
+- 已定义 `create-intro → mood → preferences → host-quiz → generating → share-placeholder` 主持人流程状态，继续使用独立键 `date-box-async-session-v1`。
+- 已实现异步会话序列化、损坏数据拒绝、称呼 trim/长度限制、偏好与逐题答案 ID 校验，以及刷新后的步骤修正。
+- 已实现 `crypto.randomUUID()` 优先、`crypto.getRandomValues()` UUID v4 降级的安全前端邀请 ID 生成；不使用 `Math.random()`。
+- 根据 Stage 2 的可选字段要求，空称呼现在是合法 payload，填写后的称呼仍限制为最多 12 个字符。
+
+## Invite Stage 2B：首页与玩家 A 创建流程
+
+- Welcome 主标题已更新为“今晚，想和TA怎么度过？”，新增视觉主入口“邀请TA一起计划”和次入口“一起用这部手机”；移动端纵向排列、桌面端双卡并排。
+- 普通入口仍进入现有 `DateGame` 单设备状态机；邀请入口进入独立 `AsyncHostFlow`，返回首页不会清空任一模式的进度。
+- 已新增可选称呼介绍页，双方称呼最多 12 个字符、提交时 trim，并展示链接包含固定选择及不得填写敏感信息的隐私说明。
+- 玩家 A 依次完成心情、四项条件和五道问答；通过可选文案 props 直接复用 `MoodScreen`、`PreferencesScreen` 与 `QuizScreen`。
+- 完成后生成唯一 ID、48 小时有效 payload 与 `#invite=v1.*` 链接，保存到独立异步会话并进入分享页占位；未实现正式分享卡或玩家 B 页面。
+- 顶层入口在无 Hash 时可恢复有意义的异步会话；服务器与 hydration 首帧继续使用统一 loading 状态。
+
+## Invite Stage 2 验证说明
+
+- `test:async-host` 覆盖会话初始化、中文称呼 trim、损坏/错误版本/超长称呼/非法答案拒绝、生成中恢复、原生与安全降级 UUID、48 小时 payload、邀请 URL 还原和两类存储键隔离。
+- `npm run lint`、`npx tsc --noEmit`、`test:async-invite` 以及原有五组回归脚本全部通过；Stage 2A、Stage 2B 与提交前最终 `npm run build` 均成功，`out/index.html` 已重新生成。
+- 当前环境未提供可调用的浏览器控制工具或 `agent-browser` CLI，因此未执行真实的 390×844 / 1440×900 点击与视觉验收，也不声明已检查视觉溢出、布局跳动或浏览器控制台。
+
 ## Invite Stage 1A：数据协议与编解码
 
 - 已新增异步邀请与结果 payload 类型、48 小时默认有效期，以及独立存储键 `date-box-async-session-v1`；普通模式继续使用 `date-box-game-state-v1`。
