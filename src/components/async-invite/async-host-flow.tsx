@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { LoaderCircle, RotateCcw } from "lucide-react";
 
 import { CreateInviteIntroScreen } from "@/components/async-invite/create-invite-intro-screen";
-import { SharePlaceholderScreen } from "@/components/async-invite/share-placeholder-screen";
+import { InviteShareScreen } from "@/components/async-invite/invite-share-screen";
 import { MoodScreen } from "@/components/date-game/mood-screen";
 import { PreferencesScreen } from "@/components/date-game/preferences-screen";
 import { QuizScreen } from "@/components/date-game/quiz-screen";
@@ -56,6 +56,7 @@ export function AsyncHostFlow({
   const [state, setState] = useState(initialState);
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [generationAttempt, setGenerationAttempt] = useState(0);
+  const [screenshotMode, setScreenshotMode] = useState(false);
 
   const commit = useCallback(
     (nextState: AsyncHostSessionState) => {
@@ -124,6 +125,17 @@ export function AsyncHostFlow({
     setState(createInitialAsyncHostSessionState());
   }
 
+  function modifyInvite() {
+    setScreenshotMode(false);
+    commit({
+      ...state,
+      step: "create-intro",
+      inviteUrl: null,
+      inviteCreatedAt: null,
+      hasPreviousInvite: true,
+    });
+  }
+
   let screen;
   switch (state.step) {
     case "create-intro":
@@ -139,6 +151,7 @@ export function AsyncHostFlow({
             hostName: state.hostName.trim(),
             guestName: state.guestName.trim(),
           })}
+          previousInviteNotice={state.hasPreviousInvite}
         />
       );
       break;
@@ -233,21 +246,29 @@ export function AsyncHostFlow({
       );
       break;
     case "share-placeholder":
-      screen = state.inviteUrl ? (
-        <SharePlaceholderScreen inviteUrl={state.inviteUrl} onBackHome={onBackHome} />
+      screen = state.inviteUrl && state.inviteCreatedAt ? (
+        <InviteShareScreen
+          inviteUrl={state.inviteUrl}
+          hostName={state.hostName}
+          expiresAt={state.inviteCreatedAt + DEFAULT_ASYNC_INVITE_DURATION_MS}
+          hasPreviousInvite={state.hasPreviousInvite}
+          screenshotMode={screenshotMode}
+          onScreenshotModeChange={setScreenshotMode}
+          onModify={modifyInvite}
+        />
       ) : null;
       break;
   }
 
   return (
     <AppShell
-      header={
+      header={screenshotMode ? undefined : (
         <BrandHeader
           currentLabel={stepLabels[state.step]}
           progress={stepProgress[state.step]}
           onReset={restartInvite}
         />
-      }
+      )}
       stickyHeader
       contentWidth={state.step === "host-quiz" ? "quiz" : "standard"}
     >

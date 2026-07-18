@@ -14,6 +14,7 @@ interface CreateInviteIntroScreenProps {
   onGuestNameChange: (value: string) => void;
   onBack: () => void;
   onContinue: () => void;
+  previousInviteNotice?: boolean;
 }
 
 function limitName(value: string): string {
@@ -27,6 +28,7 @@ export function CreateInviteIntroScreen({
   onGuestNameChange,
   onBack,
   onContinue,
+  previousInviteNotice = false,
 }: CreateInviteIntroScreenProps) {
   return (
     <section className="mx-auto w-full max-w-[720px]" aria-labelledby="create-invite-title">
@@ -46,6 +48,11 @@ export function CreateInviteIntroScreen({
       </div>
 
       <GlassPanel intensity="default" className="mt-6 p-5 sm:mt-9 sm:p-7">
+        {previousInviteNotice ? (
+          <p className="mb-5 rounded-2xl border border-purple-200 bg-purple-100/55 px-4 py-3 text-sm leading-6 text-text-secondary" role="status">
+            修改后会生成一份新的邀请；旧链接无法主动撤回，可能仍可访问。
+          </p>
+        ) : null}
         <div className="grid gap-5 sm:grid-cols-2 sm:gap-6">
           <label className="block">
             <span className="text-sm font-semibold text-text-primary">你的称呼</span>

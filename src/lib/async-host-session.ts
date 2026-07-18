@@ -93,6 +93,7 @@ export function createInitialAsyncHostSessionState(): AsyncHostSessionState {
     hostAnswers: [],
     inviteUrl: null,
     inviteCreatedAt: null,
+    hasPreviousInvite: false,
   };
 }
 
@@ -119,6 +120,7 @@ export function parseAsyncHostSession(rawValue: string): AsyncHostStorageParseRe
       !isPartialAnswerSet(state.hostAnswers) ||
       !(state.inviteUrl === null || (typeof state.inviteUrl === "string" && state.inviteUrl.length <= 12_000)) ||
       !(state.inviteCreatedAt === null || (typeof state.inviteCreatedAt === "number" && Number.isFinite(state.inviteCreatedAt)))
+      || !(state.hasPreviousInvite === undefined || typeof state.hasPreviousInvite === "boolean")
     ) {
       return { ok: false };
     }
@@ -131,6 +133,7 @@ export function parseAsyncHostSession(rawValue: string): AsyncHostStorageParseRe
       hostAnswers: state.hostAnswers,
       inviteUrl: state.inviteUrl,
       inviteCreatedAt: state.inviteCreatedAt,
+      hasPreviousInvite: state.hasPreviousInvite === true,
     };
 
     return {

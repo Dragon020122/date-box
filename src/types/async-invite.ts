@@ -18,6 +18,7 @@ export interface AsyncHostSessionState {
   hostAnswers: string[];
   inviteUrl: string | null;
   inviteCreatedAt: number | null;
+  hasPreviousInvite: boolean;
 }
 
 export interface AsyncInvitePayload {

@@ -48,6 +48,7 @@ assert.equal(restored.ok, true);
 assert.equal(restored.value.hostName, "小雨");
 assert.equal(restored.value.guestName, "阿岚");
 assert.equal(restored.value.step, "share-placeholder");
+assert.equal(restored.value.hasPreviousInvite, false);
 assert.equal(hasMeaningfulAsyncHostSession(restored.value), true);
 
 assert.equal(parseAsyncHostSession("not-json").ok, false);
@@ -105,4 +106,10 @@ assert.equal(ASYNC_INVITE_STORAGE_KEY, "date-box-async-session-v1");
 assert.equal(DATE_GAME_STORAGE_KEY, "date-box-game-state-v1");
 assert.notEqual(ASYNC_INVITE_STORAGE_KEY, DATE_GAME_STORAGE_KEY);
 
-console.log("async-host-session: 17 restore, payload, isolation and secure ID checks passed");
+const modifiedState = parseAsyncHostSession(
+  serializeAsyncHostSession({ ...completedState, hasPreviousInvite: true }),
+);
+assert.equal(modifiedState.ok, true);
+assert.equal(modifiedState.value.hasPreviousInvite, true);
+
+console.log("async-host-session: 20 restore, payload, modification, isolation and secure ID checks passed");
