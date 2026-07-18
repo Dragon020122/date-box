@@ -152,7 +152,9 @@ export function AppEntry() {
     if (showAsyncHost) {
       return (
         <AsyncHostFlow
-          initialState={restoredAsyncState ?? createInitialAsyncHostSessionState()}
+          initialState={selectedMode === "async-host"
+            ? createInitialAsyncHostSessionState()
+            : restoredAsyncState ?? createInitialAsyncHostSessionState()}
           saveState={asyncStorage.save}
           clearState={asyncStorage.clear}
           onBackHome={() => setSelectedMode("normal")}
@@ -168,7 +170,18 @@ export function AppEntry() {
   }
 
   if (entry.status === "result") {
-    return <AsyncGuestFlow invite={entry.payload.invite} result={entry.payload} />;
+    return (
+      <AsyncGuestFlow
+        invite={entry.payload.invite}
+        result={entry.payload}
+        onResultRestart={() => {
+          asyncStorage.clear();
+          window.history.replaceState(null, "", window.location.href.split("#")[0]);
+          setSelectedMode("async-host");
+          setEntry({ status: "normal", mode: "normal" });
+        }}
+      />
+    );
   }
 
   if (entry.status === "expired") {

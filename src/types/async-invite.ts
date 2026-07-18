@@ -68,6 +68,7 @@ export interface AsyncGuestSessionState {
   skippedStepIds: string[];
   favoriteMoment: string;
   messageToPartner: string;
+  resultCreatedAt: number | null;
   updatedAt: number;
 }
 

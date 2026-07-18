@@ -11,6 +11,11 @@ import {
   isWeChatUserAgent,
   tryShareInvite,
 } from "../src/lib/invite-sharing.ts";
+import {
+  RESULT_SHARE_TEXT,
+  RESULT_SHARE_TITLE,
+  tryShareResult,
+} from "../src/lib/result-sharing.ts";
 
 const inviteUrl = "https://date-box-123.tcloudbaseapp.com/#invite=v1.complete-payload";
 
@@ -38,6 +43,23 @@ assert.equal(
 );
 assert.equal(await tryShareInvite(undefined, inviteUrl), false);
 
+const resultUrl = "https://date-box-123.tcloudbaseapp.com/#result=v1.complete-payload";
+let sharedResultData;
+assert.equal(
+  await tryShareResult(async (data) => { sharedResultData = data; }, resultUrl),
+  true,
+);
+assert.deepEqual(sharedResultData, {
+  title: RESULT_SHARE_TITLE,
+  text: RESULT_SHARE_TEXT,
+  url: resultUrl,
+});
+assert.equal(
+  await tryShareResult(async () => Promise.reject(new Error("Share cancelled")), resultUrl),
+  false,
+);
+assert.equal(await tryShareResult(undefined, resultUrl), false);
+
 const expiry = new Date(2026, 6, 20, 14, 5).getTime();
 assert.equal(formatInviteExpiry(expiry), "07月20日 14:05");
 
@@ -58,4 +80,4 @@ assert.match(qrMarkup, /#FFFFFF/i);
 assert.match(qrMarkup, /#2F2430/i);
 assert.match(qrMarkup, /<path/);
 
-console.log("invite-sharing: 14 share, WeChat, domain and SVG QR checks passed");
+console.log("invite-sharing: 19 invite/result share, WeChat, domain and SVG QR checks passed");

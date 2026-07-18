@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ArrowLeft, ArrowRight, Blend, Route, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Blend, Route, Send, Sparkles } from "lucide-react";
 
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { PrimaryButton } from "@/components/ui/primary-button";
@@ -23,6 +23,7 @@ interface CompatibilityScreenProps {
   participantNames?: [string, string];
   skipAnalysis?: boolean;
   continueLabel?: string;
+  onShareResult?: () => void;
 }
 
 export function CompatibilityScreen({
@@ -32,6 +33,7 @@ export function CompatibilityScreen({
   participantNames,
   skipAnalysis = false,
   continueLabel = "开启今晚的约会盲盒",
+  onShareResult,
 }: CompatibilityScreenProps) {
   const [analysisIndex, setAnalysisIndex] = useState(0);
   const [showResult, setShowResult] = useState(skipAnalysis);
@@ -191,6 +193,11 @@ export function CompatibilityScreen({
                 <SecondaryButton onClick={() => setShowBackDialog(true)} className="w-full sm:w-auto">
                   <ArrowLeft aria-hidden="true" className="size-4.5" />
                   返回看看最后一题
+                </SecondaryButton>
+              ) : onShareResult ? (
+                <SecondaryButton onClick={onShareResult} className="w-full sm:w-auto">
+                  <Send aria-hidden="true" className="size-4.5" />
+                  把结果发回给TA
                 </SecondaryButton>
               ) : null}
               <PrimaryButton onClick={onContinue} className="w-full sm:w-auto">

@@ -34,6 +34,7 @@ const invite = {
 const initial = createInitialAsyncGuestSession(invite);
 assert.equal(initial.step, "welcome");
 assert.equal(initial.inviteId, invite.id);
+assert.equal(initial.resultCreatedAt, null);
 assert.equal(getAsyncGuestStorageKey(invite.id), "date-box-async-session-v1:guest:invite-one");
 assert.notEqual(getAsyncGuestStorageKey("invite-one"), getAsyncGuestStorageKey("invite-two"));
 
@@ -79,6 +80,7 @@ const result = {
 const resultState = createInitialAsyncGuestSession(invite, result);
 assert.equal(resultState.step, "compatibility");
 assert.equal(resultState.selectedPlanId, result.selectedPlanId);
+assert.equal(resultState.resultCreatedAt, result.createdAt);
 assert.deepEqual(resultState.guestAnswers, result.guestAnswers);
 
 console.log("async-guest-session: 12 invite-bound restore, validation and result checks passed");

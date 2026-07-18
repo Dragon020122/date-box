@@ -99,6 +99,7 @@ export function useAsyncGuestController({
       step: "handoff",
       compatibility,
       selectedPlanId: planResult.plan.id,
+      resultCreatedAt: createdAt,
       updatedAt: createdAt,
     };
     commit(nextState);

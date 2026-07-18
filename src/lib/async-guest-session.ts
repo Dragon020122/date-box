@@ -72,6 +72,7 @@ function fromDateGameState(
     skippedStepIds: state.skippedStepIds,
     favoriteMoment: state.favoriteMoment,
     messageToPartner: state.messageToPartner,
+    resultCreatedAt: null,
     updatedAt: state.updatedAt,
   };
 }
@@ -92,6 +93,7 @@ export function createInitialAsyncGuestSession(
     skippedStepIds: [],
     favoriteMoment: "",
     messageToPartner: "",
+    resultCreatedAt: result?.createdAt ?? null,
     updatedAt: result?.createdAt ?? Date.now(),
   };
 }
@@ -126,7 +128,12 @@ export function parseAsyncGuestSession(
       !allowedGuestSteps.has(state.step) ||
       !Array.isArray(state.guestAnswers) ||
       !state.guestAnswers.every((answer) => typeof answer === "string") ||
-      !hasValidGuestAnswers(state.guestAnswers)
+      !hasValidGuestAnswers(state.guestAnswers) ||
+      !(
+        state.resultCreatedAt === undefined ||
+        state.resultCreatedAt === null ||
+        (typeof state.resultCreatedAt === "number" && Number.isFinite(state.resultCreatedAt))
+      )
     ) {
       return { ok: false };
     }
@@ -145,7 +152,15 @@ export function parseAsyncGuestSession(
 
     return {
       ok: true,
-      value: fromDateGameState(invite.id, normalized.value),
+      value: {
+        ...fromDateGameState(invite.id, normalized.value),
+        resultCreatedAt:
+          typeof state.resultCreatedAt === "number"
+            ? state.resultCreatedAt
+            : normalized.value.selectedPlanId
+              ? normalized.value.updatedAt
+              : null,
+      },
     };
   } catch {
     return { ok: false };

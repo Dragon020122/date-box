@@ -15,6 +15,8 @@
     "test:async-invite": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test-async-invite.mjs",
     "test:async-host": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test-async-host-session.mjs",
     "test:async-guest": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test-async-guest-session.mjs",
+    "test:async-result": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test-async-result.mjs",
+    "test:async-roundtrip": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test-async-roundtrip.mjs",
     "test:sharing": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test-invite-sharing.mjs"
   },
   "dependencies": {
