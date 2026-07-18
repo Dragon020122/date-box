@@ -1,4 +1,8 @@
-import type { DatePreferences } from "@/types/date-game";
+import type {
+  CompatibilityResult,
+  DatePreferences,
+  GameStep,
+} from "@/types/date-game";
 
 export type EntryMode = "normal" | "async-invite" | "async-result";
 
@@ -40,6 +44,33 @@ export interface AsyncResultPayload {
   createdAt: number;
 }
 
+export type AsyncGuestStep = Extract<
+  GameStep,
+  | "welcome"
+  | "player-b-quiz"
+  | "handoff"
+  | "compatibility"
+  | "mystery-box"
+  | "plan"
+  | "active-date"
+  | "memory"
+>;
+
+export interface AsyncGuestSessionState {
+  inviteId: string;
+  step: AsyncGuestStep;
+  guestAnswers: string[];
+  compatibility: CompatibilityResult | null;
+  selectedPlanId: string | null;
+  seenPlanIds: string[];
+  planChangeCount: number;
+  completedStepIds: string[];
+  skippedStepIds: string[];
+  favoriteMoment: string;
+  messageToPartner: string;
+  updatedAt: number;
+}
+
 export type InviteParseResult =
   | { status: "valid"; payload: AsyncInvitePayload }
   | { status: "expired"; payload: AsyncInvitePayload }
@@ -54,3 +85,7 @@ export type ResultParseResult =
 
 export const ASYNC_INVITE_STORAGE_KEY = "date-box-async-session-v1";
 export const DEFAULT_ASYNC_INVITE_DURATION_MS = 48 * 60 * 60 * 1000;
+
+export function getAsyncGuestStorageKey(inviteId: string): string {
+  return `${ASYNC_INVITE_STORAGE_KEY}:guest:${inviteId}`;
+}

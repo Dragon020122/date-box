@@ -1,12 +1,14 @@
 "use client";
 
-import { CircleAlert, Clock3, Link2, Sparkles } from "lucide-react";
+import { CircleAlert, Clock3 } from "lucide-react";
 import { useEffect, useState, type ComponentType } from "react";
 
 import { AsyncHostFlow } from "@/components/async-invite/async-host-flow";
+import { AsyncGuestFlow } from "@/components/async-invite/async-guest-flow";
 import { DateGame } from "@/components/date-game/date-game";
 import { GameLoadingScreen } from "@/components/date-game/game-loading-screen";
 import { AppShell } from "@/components/layout/app-shell";
+import { PrimaryButton } from "@/components/ui/primary-button";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { parseInviteFromHash, parseResultFromHash } from "@/lib/async-invite-codec";
 import {
@@ -17,6 +19,8 @@ import {
 } from "@/lib/async-host-session";
 import {
   ASYNC_INVITE_STORAGE_KEY,
+  type AsyncInvitePayload,
+  type AsyncResultPayload,
   type AsyncHostSessionState,
   type EntryMode,
 } from "@/types/async-invite";
@@ -24,8 +28,8 @@ import {
 type EntryState =
   | { status: "loading" }
   | { status: "normal"; mode: Extract<EntryMode, "normal"> }
-  | { status: "invite"; mode: Extract<EntryMode, "async-invite"> }
-  | { status: "result"; mode: Extract<EntryMode, "async-result"> }
+  | { status: "invite"; mode: Extract<EntryMode, "async-invite">; payload: AsyncInvitePayload }
+  | { status: "result"; mode: Extract<EntryMode, "async-result">; payload: AsyncResultPayload }
   | { status: "expired" }
   | { status: "invalid"; reason: string };
 
@@ -34,6 +38,8 @@ interface EntryPlaceholderProps {
   eyebrow: string;
   title: string;
   description: string;
+  actionLabel?: string;
+  onAction?: () => void;
 }
 
 function EntryPlaceholder({
@@ -41,6 +47,8 @@ function EntryPlaceholder({
   eyebrow,
   title,
   description,
+  actionLabel,
+  onAction,
 }: EntryPlaceholderProps) {
   return (
     <AppShell contentWidth="quiz">
@@ -58,6 +66,11 @@ function EntryPlaceholder({
           <p className="mx-auto mt-4 max-w-md text-sm leading-7 text-text-secondary sm:text-base">
             {description}
           </p>
+          {actionLabel && onAction ? (
+            <PrimaryButton onClick={onAction} className="mt-7">
+              {actionLabel}
+            </PrimaryButton>
+          ) : null}
         </div>
       </section>
     </AppShell>
@@ -72,7 +85,7 @@ function resolveEntry(hash: string): EntryState {
   if (hash.startsWith("#invite")) {
     const parsed = parseInviteFromHash(hash);
     if (parsed.status === "valid") {
-      return { status: "invite", mode: "async-invite" };
+      return { status: "invite", mode: "async-invite", payload: parsed.payload };
     }
     if (parsed.status === "expired") {
       return { status: "expired" };
@@ -86,7 +99,7 @@ function resolveEntry(hash: string): EntryState {
   if (hash.startsWith("#result")) {
     const parsed = parseResultFromHash(hash);
     if (parsed.status === "valid") {
-      return { status: "result", mode: "async-result" };
+      return { status: "result", mode: "async-result", payload: parsed.payload };
     }
     if (parsed.status === "expired") {
       return { status: "expired" };
@@ -151,25 +164,11 @@ export function AppEntry() {
   }
 
   if (entry.status === "invite") {
-    return (
-      <EntryPlaceholder
-        icon={Link2}
-        eyebrow="Invite Stage 1"
-        title="已识别异步邀请"
-        description="邀请数据已经安全还原。正式的对方答题流程将在下一阶段接入。"
-      />
-    );
+    return <AsyncGuestFlow invite={entry.payload} />;
   }
 
   if (entry.status === "result") {
-    return (
-      <EntryPlaceholder
-        icon={Sparkles}
-        eyebrow="Result Link"
-        title="已识别结果链接"
-        description="双方数据与约会计划已经通过校验。正式结果页面将在后续阶段接入。"
-      />
-    );
+    return <AsyncGuestFlow invite={entry.payload.invite} result={entry.payload} />;
   }
 
   if (entry.status === "expired") {
@@ -177,8 +176,10 @@ export function AppEntry() {
       <EntryPlaceholder
         icon={Clock3}
         eyebrow="Invite Expired"
-        title="邀请已失效"
-        description="这份邀请已经超过 48 小时。请让对方重新创建一份新的邀请。"
+        title="这份心动邀请已经错过了有效时间"
+        description="为了保护你们的选择，这份链接已经不能再进入答题流程。"
+        actionLabel="重新创建一份计划"
+        onAction={() => window.location.assign(window.location.href.split("#")[0])}
       />
     );
   }
@@ -187,8 +188,10 @@ export function AppEntry() {
     <EntryPlaceholder
       icon={CircleAlert}
       eyebrow="Link Error"
-      title="邀请链接无法识别"
+      title="这份邀请似乎没有完整抵达"
       description={`${entry.reason}。请确认链接完整，或请对方重新发送。`}
+      actionLabel="返回Date Box首页"
+      onAction={() => window.location.assign(window.location.href.split("#")[0])}
     />
   );
 }

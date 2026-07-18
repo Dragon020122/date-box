@@ -18,17 +18,23 @@ const analysisMessages = [
 
 interface CompatibilityScreenProps {
   result: CompatibilityResult;
-  onBack: () => void;
+  onBack?: () => void;
   onContinue: () => void;
+  participantNames?: [string, string];
+  skipAnalysis?: boolean;
+  continueLabel?: string;
 }
 
 export function CompatibilityScreen({
   result,
   onBack,
   onContinue,
+  participantNames,
+  skipAnalysis = false,
+  continueLabel = "开启今晚的约会盲盒",
 }: CompatibilityScreenProps) {
   const [analysisIndex, setAnalysisIndex] = useState(0);
-  const [showResult, setShowResult] = useState(false);
+  const [showResult, setShowResult] = useState(skipAnalysis);
   const [showBackDialog, setShowBackDialog] = useState(false);
   const shouldReduceMotion = useReducedMotion();
   const trajectoryLabel =
@@ -37,6 +43,9 @@ export function CompatibilityScreen({
       : "不同的选择，正在拼成同一条今晚路线";
 
   useEffect(() => {
+    if (skipAnalysis) {
+      return;
+    }
     const messageDelay = shouldReduceMotion ? 420 : 620;
     const timers = [
       window.setTimeout(() => setAnalysisIndex(1), messageDelay),
@@ -45,7 +54,7 @@ export function CompatibilityScreen({
     ];
 
     return () => timers.forEach((timer) => window.clearTimeout(timer));
-  }, [shouldReduceMotion]);
+  }, [shouldReduceMotion, skipAnalysis]);
 
   return (
     <section className="mx-auto min-h-[700px] w-full max-w-4xl" aria-live="polite">
@@ -114,6 +123,11 @@ export function CompatibilityScreen({
               </div>
 
               <div className="pt-5 lg:pt-0">
+                {participantNames ? (
+                  <p className="text-xs font-semibold tracking-[0.13em] text-pink-600">
+                    {participantNames[0]} <span className="mx-1 text-text-muted">×</span> {participantNames[1]}
+                  </p>
+                ) : null}
                 <h1 className="mt-3 text-[clamp(2.25rem,6vw,3.75rem)] font-semibold leading-[1.06] tracking-[-0.05em] text-text-primary">
                   {result.title}
                 </h1>
@@ -172,13 +186,15 @@ export function CompatibilityScreen({
               </div>
             </section>
 
-            <div className="sticky bottom-0 z-20 -mx-[18px] mt-5 flex flex-col-reverse gap-2 bg-[linear-gradient(0deg,rgba(255,250,247,0.98)_0%,rgba(255,250,247,0.9)_72%,transparent_100%)] px-[18px] pb-[calc(0.75rem+var(--safe-bottom))] pt-5 backdrop-blur-md sm:static sm:mx-0 sm:mt-7 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:bg-none sm:p-0 sm:backdrop-blur-none">
-              <SecondaryButton onClick={() => setShowBackDialog(true)} className="w-full sm:w-auto">
-                <ArrowLeft aria-hidden="true" className="size-4.5" />
-                返回看看最后一题
-              </SecondaryButton>
+            <div className={`sticky bottom-0 z-20 -mx-[18px] mt-5 flex flex-col-reverse gap-2 bg-[linear-gradient(0deg,rgba(255,250,247,0.98)_0%,rgba(255,250,247,0.9)_72%,transparent_100%)] px-[18px] pb-[calc(0.75rem+var(--safe-bottom))] pt-5 backdrop-blur-md sm:static sm:mx-0 sm:mt-7 sm:flex-row sm:items-center sm:gap-3 sm:bg-none sm:p-0 sm:backdrop-blur-none ${onBack ? "sm:justify-between" : "sm:justify-end"}`}>
+              {onBack ? (
+                <SecondaryButton onClick={() => setShowBackDialog(true)} className="w-full sm:w-auto">
+                  <ArrowLeft aria-hidden="true" className="size-4.5" />
+                  返回看看最后一题
+                </SecondaryButton>
+              ) : null}
               <PrimaryButton onClick={onContinue} className="w-full sm:w-auto">
-                开启今晚的约会盲盒
+                {continueLabel}
                 <ArrowRight aria-hidden="true" className="size-4.5" />
               </PrimaryButton>
             </div>
@@ -192,7 +208,7 @@ export function CompatibilityScreen({
         description="你们的答案都会保留。再次提交后，默契结果会根据最新选择重新生成。"
         confirmLabel="返回最后一题"
         onCancel={() => setShowBackDialog(false)}
-        onConfirm={onBack}
+        onConfirm={() => onBack?.()}
       />
     </section>
   );
