@@ -1,5 +1,17 @@
 # Date Box Development Status
 
+## Invite Stage 5C：玩家 B 答题阻断 Bug 修复
+
+- 实际根因：全新玩家 B 会话曾以空数组保存 `guestAnswers`；对空数组调用 `findIndex` 得到 `-1`，入口把 `-1` 当成“全部已答”并回退到第 5 题。第 5 题提交因前四题缺失而静默返回，同时 `QuizScreen` 的导航锁已置为 `true`，题号没有变化，锁的复位 effect 不会执行，因此“上一题”和“揭晓”随后均无响应。
+- 会话状态现使用固定五项的 `(string | null)[]`、`currentQuestionIndex` 与既有 `step`；存储键继续采用 `date-box-async-session-v1:guest:<inviteId>`。解析时逐题校验 option ID，仅清理当前邀请损坏记录，并由 `firstUnansweredIndex` 决定答题恢复位置，不盲信持久化题号。
+- `QuizScreen` 支持受控题号；玩家 B 每次前进/后退都会保存当前题号。第 1 题“上一题”同时使用原生 `disabled` 与禁用样式；第 2–5 题可正常后退并保留答案。
+- 第 5 题提交会先用当前选项生成 `nextAnswers`，再校验和计算结果；若仍有缺题，会显示提示并跳到首个未答题，同时立即释放导航锁，不再出现可点击但无响应的状态。
+- 已完成五题却仍保存为答题步骤的旧会话，会在恢复时重新调用既有 `calculateCompatibility` 与 `generateDatePlan`，修正到揭晓步骤；不会停留在第 5 题。
+- `test:async-guest` 增至 19 项，覆盖空白初始状态、固定长度答案、邀请 ID 隔离、首个未答题恢复、题号边界、非法答案拒绝和完成态修正。其余 10 组既有测试全部通过。
+- 静态 `out` 通过 `npx serve out -l 4174` 验证。两个独立 Chrome Context 验证了：新邀请先显示落地页并从 `01 / 05` 开始、旧邀请第 5 题进度不串入新邀请、同邀请答完两题刷新到第 3 题、上一题保留答案、第 5 题揭晓进入双人结果、完成后刷新不回第 5 题。
+- 390×844 与 1440×900 下使用 `document.elementFromPoint` 均确认底部点击位置命中真实 `button`，无透明 overlay 遮挡；桌面验证期间无控制台错误。
+- `npm run lint`、`npx tsc --noEmit` 与最终 `npm run build` 均通过；Next.js 16.2.10 静态生成 4/4 页面。沙箱内构建仍受 Windows `spawn EPERM` 限制，按既有方式在沙箱外运行后成功。
+
 ## Invite Stage 5A：结果回传与玩家 A 结果入口
 
 - 玩家 B 在双人结果页和共同计划页均可进入“把结果发回给TA”，结果链接由原邀请、玩家 B 五道答案、当前 `selectedPlanId` 和稳定结果生成时间组成，并继续使用 `#result=v1.*` 协议。

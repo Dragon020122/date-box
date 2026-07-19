@@ -16,7 +16,6 @@ import { BrandHeader } from "@/components/layout/brand-header";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { Toast } from "@/components/ui/toast";
 import { datePlans } from "@/data/date-plans";
-import { quizQuestions } from "@/data/quiz-questions";
 import { useAsyncGuestController } from "@/hooks/use-async-guest-controller";
 import { createResultUrl } from "@/lib/async-invite-codec";
 import type {
@@ -66,7 +65,11 @@ export function AsyncGuestSession({
   const [shareOpen, setShareOpen] = useState(false);
   const [resultUrl, setResultUrl] = useState("");
   const selectedPlan = datePlans.find((plan) => plan.id === state.selectedPlanId);
-  const firstMissingAnswer = state.guestAnswers.findIndex((answer) => !answer);
+  const completeGuestAnswers = state.guestAnswers.every(
+    (answer): answer is string => typeof answer === "string",
+  )
+    ? state.guestAnswers
+    : null;
   const participantNames: [string, string] = [
     invite.hostName.trim() || "邀请你的TA",
     invite.guestName?.trim() || "你",
@@ -75,18 +78,18 @@ export function AsyncGuestSession({
     if (
       !state.selectedPlanId ||
       !state.resultCreatedAt ||
-      state.guestAnswers.length !== quizQuestions.length
+      !completeGuestAnswers
     ) {
       return null;
     }
     return {
       v: 1,
       invite,
-      guestAnswers: state.guestAnswers,
+      guestAnswers: completeGuestAnswers,
       selectedPlanId: state.selectedPlanId,
       createdAt: state.resultCreatedAt,
     };
-  }, [invite, state.guestAnswers, state.resultCreatedAt, state.selectedPlanId]);
+  }, [completeGuestAnswers, invite, state.resultCreatedAt, state.selectedPlanId]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
@@ -109,11 +112,13 @@ export function AsyncGuestSession({
       screen = (
         <QuizScreen
           player="playerB"
-          answers={state.guestAnswers}
-          initialQuestionIndex={firstMissingAnswer >= 0 ? firstMissingAnswer : quizQuestions.length - 1}
+          answers={state.guestAnswers.map((answer) => answer ?? "")}
+          questionIndex={state.currentQuestionIndex}
+          onQuestionIndexChange={controller.updateQuestionIndex}
           onAnswer={controller.updateAnswer}
           onExit={() => controller.patchState({ step: "welcome" })}
           onComplete={controller.completeQuiz}
+          disableBackAtFirstQuestion
           copy={{
             label: "邀请回应 · 你",
             title: "轮到你写下期待",

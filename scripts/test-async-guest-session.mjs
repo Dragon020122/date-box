@@ -34,6 +34,8 @@ const invite = {
 const initial = createInitialAsyncGuestSession(invite);
 assert.equal(initial.step, "welcome");
 assert.equal(initial.inviteId, invite.id);
+assert.equal(initial.currentQuestionIndex, 0);
+assert.deepEqual(initial.guestAnswers, [null, null, null, null, null]);
 assert.equal(initial.resultCreatedAt, null);
 assert.equal(getAsyncGuestStorageKey(invite.id), "date-box-async-session-v1:guest:invite-one");
 assert.notEqual(getAsyncGuestStorageKey("invite-one"), getAsyncGuestStorageKey("invite-two"));
@@ -41,11 +43,13 @@ assert.notEqual(getAsyncGuestStorageKey("invite-one"), getAsyncGuestStorageKey("
 const answered = {
   ...initial,
   step: "player-b-quiz",
-  guestAnswers: ["casual-walk", "deep-conversation"],
+  currentQuestionIndex: 4,
+  guestAnswers: ["casual-walk", "deep-conversation", null, null, null],
 };
 const restored = parseAsyncGuestSession(serializeAsyncGuestSession(answered), invite);
 assert.equal(restored.ok, true);
 assert.deepEqual(restored.value.guestAnswers, answered.guestAnswers);
+assert.equal(restored.value.currentQuestionIndex, 2);
 assert.deepEqual(toAsyncDateGameState(restored.value, invite).playerAAnswers, invite.hostAnswers);
 
 assert.equal(parseAsyncGuestSession("not-json", invite).ok, false);
@@ -58,7 +62,14 @@ assert.equal(
 );
 assert.equal(
   parseAsyncGuestSession(
-    serializeAsyncGuestSession({ ...answered, guestAnswers: ["not-allowed"] }),
+    serializeAsyncGuestSession({ ...answered, guestAnswers: ["not-allowed", null, null, null, null] }),
+    invite,
+  ).ok,
+  false,
+);
+assert.equal(
+  parseAsyncGuestSession(
+    serializeAsyncGuestSession({ ...answered, currentQuestionIndex: 5 }),
     invite,
   ).ok,
   false,
@@ -83,4 +94,18 @@ assert.equal(resultState.selectedPlanId, result.selectedPlanId);
 assert.equal(resultState.resultCreatedAt, result.createdAt);
 assert.deepEqual(resultState.guestAnswers, result.guestAnswers);
 
-console.log("async-guest-session: 12 invite-bound restore, validation and result checks passed");
+const completedQuiz = parseAsyncGuestSession(
+  serializeAsyncGuestSession({
+    ...initial,
+    step: "player-b-quiz",
+    currentQuestionIndex: 4,
+    guestAnswers: result.guestAnswers,
+  }),
+  invite,
+);
+assert.equal(completedQuiz.ok, true);
+assert.equal(completedQuiz.value.step, "handoff");
+assert.ok(completedQuiz.value.compatibility);
+assert.ok(completedQuiz.value.selectedPlanId);
+
+console.log("async-guest-session: 19 invite-bound restore, navigation and completion checks passed");

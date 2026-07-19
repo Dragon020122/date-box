@@ -64,9 +64,10 @@ export function useAsyncGuestController({
   }, [toastOpen, toastMessage]);
 
   function updateAnswer(questionIndex: number, answerId: string) {
+    const answers = state.guestAnswers.map((answer) => answer ?? "");
     patchState({
       guestAnswers: setQuizAnswer(
-        state.guestAnswers,
+        answers,
         questionIndex,
         answerId,
         quizQuestions.length,
@@ -74,14 +75,26 @@ export function useAsyncGuestController({
     });
   }
 
-  function completeQuiz() {
-    if (!hasCompleteQuizAnswers(state.guestAnswers, quizQuestions.length)) {
-      return;
+  function completeQuiz(questionIndex: number, answerId: string): boolean {
+    const nextAnswers = setQuizAnswer(
+      state.guestAnswers.map((answer) => answer ?? ""),
+      questionIndex,
+      answerId,
+      quizQuestions.length,
+    );
+    if (!hasCompleteQuizAnswers(nextAnswers, quizQuestions.length)) {
+      const firstUnansweredIndex = nextAnswers.findIndex((answer) => !answer);
+      patchState({
+        currentQuestionIndex: Math.max(0, firstUnansweredIndex),
+        guestAnswers: nextAnswers.map((answer) => answer || null),
+      });
+      showToast("还有小问题没有回答，已经带你回到第一道未完成题。");
+      return false;
     }
 
     const compatibility = calculateCompatibility(
       invite.hostAnswers,
-      state.guestAnswers,
+      nextAnswers,
       {
         playerA: invite.hostName.trim() || "邀请你的TA",
         playerB: invite.guestName?.trim() || "你",
@@ -91,12 +104,14 @@ export function useAsyncGuestController({
       plans: datePlans,
       preferences: invite.preferences,
       playerAAnswers: invite.hostAnswers,
-      playerBAnswers: state.guestAnswers,
+      playerBAnswers: nextAnswers,
     });
     const createdAt = Date.now();
     const nextState: AsyncGuestSessionState = {
       ...state,
       step: "handoff",
+      currentQuestionIndex: quizQuestions.length - 1,
+      guestAnswers: nextAnswers,
       compatibility,
       selectedPlanId: planResult.plan.id,
       resultCreatedAt: createdAt,
@@ -107,7 +122,7 @@ export function useAsyncGuestController({
     const resultPayload: AsyncResultPayload = {
       v: 1,
       invite,
-      guestAnswers: state.guestAnswers,
+      guestAnswers: nextAnswers,
       selectedPlanId: planResult.plan.id,
       createdAt,
     };
@@ -116,6 +131,7 @@ export function useAsyncGuestController({
       "",
       createResultUrl(window.location.href, resultPayload),
     );
+    return true;
   }
 
   function openMysteryBox() {
@@ -136,7 +152,7 @@ export function useAsyncGuestController({
       plans: datePlans,
       preferences: invite.preferences,
       playerAAnswers: invite.hostAnswers,
-      playerBAnswers: state.guestAnswers,
+      playerBAnswers: state.guestAnswers.map((answer) => answer ?? ""),
       seenPlanIds: state.seenPlanIds,
       planChangeCount: state.planChangeCount,
       selectedPlanId: state.selectedPlanId,
@@ -185,6 +201,8 @@ export function useAsyncGuestController({
     setResetDialogOpen,
     patchState,
     updateAnswer,
+    updateQuestionIndex: (currentQuestionIndex: number) =>
+      patchState({ currentQuestionIndex }),
     completeQuiz,
     openMysteryBox,
     changePlan,

@@ -59,7 +59,8 @@ export type AsyncGuestStep = Extract<
 export interface AsyncGuestSessionState {
   inviteId: string;
   step: AsyncGuestStep;
-  guestAnswers: string[];
+  currentQuestionIndex: number;
+  guestAnswers: Array<string | null>;
   compatibility: CompatibilityResult | null;
   selectedPlanId: string | null;
   seenPlanIds: string[];
