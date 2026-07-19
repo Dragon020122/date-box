@@ -6,6 +6,7 @@ import {
   Mail,
   RefreshCw,
   Route,
+  Send,
   Sparkles,
 } from "lucide-react";
 
@@ -22,6 +23,7 @@ interface DatePlanScreenProps {
   onChangePlan: () => void;
   onSavePlan: () => void;
   onStart: () => void;
+  onShareResult?: () => void;
 }
 
 export function DatePlanScreen({
@@ -31,6 +33,7 @@ export function DatePlanScreen({
   onChangePlan,
   onSavePlan,
   onStart,
+  onShareResult,
 }: DatePlanScreenProps) {
   const remainingChanges = Math.max(0, MAX_PLAN_CHANGES - planChangeCount);
 
@@ -174,7 +177,7 @@ export function DatePlanScreen({
           </PrimaryButton>
         </div>
 
-        <div className="mt-2 text-center sm:mt-3">
+        <div className="mt-2 flex flex-col items-center justify-center gap-1 sm:mt-3 sm:flex-row">
           <button
             type="button"
             onClick={onSavePlan}
@@ -183,6 +186,16 @@ export function DatePlanScreen({
             <Bookmark aria-hidden="true" className="size-4" />
             保存这份计划
           </button>
+          {onShareResult ? (
+            <button
+              type="button"
+              onClick={onShareResult}
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-4 text-sm font-semibold text-text-secondary transition-colors hover:bg-white/45 hover:text-pink-600"
+            >
+              <Send aria-hidden="true" className="size-4" />
+              把结果发回给TA
+            </button>
+          ) : null}
         </div>
       </div>
     </section>

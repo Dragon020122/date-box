@@ -1,5 +1,119 @@
 # Date Box Development Status
 
+## Invite Stage 5C：玩家 B 答题阻断 Bug 修复
+
+- 实际根因：全新玩家 B 会话曾以空数组保存 `guestAnswers`；对空数组调用 `findIndex` 得到 `-1`，入口把 `-1` 当成“全部已答”并回退到第 5 题。第 5 题提交因前四题缺失而静默返回，同时 `QuizScreen` 的导航锁已置为 `true`，题号没有变化，锁的复位 effect 不会执行，因此“上一题”和“揭晓”随后均无响应。
+- 会话状态现使用固定五项的 `(string | null)[]`、`currentQuestionIndex` 与既有 `step`；存储键继续采用 `date-box-async-session-v1:guest:<inviteId>`。解析时逐题校验 option ID，仅清理当前邀请损坏记录，并由 `firstUnansweredIndex` 决定答题恢复位置，不盲信持久化题号。
+- `QuizScreen` 支持受控题号；玩家 B 每次前进/后退都会保存当前题号。第 1 题“上一题”同时使用原生 `disabled` 与禁用样式；第 2–5 题可正常后退并保留答案。
+- 第 5 题提交会先用当前选项生成 `nextAnswers`，再校验和计算结果；若仍有缺题，会显示提示并跳到首个未答题，同时立即释放导航锁，不再出现可点击但无响应的状态。
+- 已完成五题却仍保存为答题步骤的旧会话，会在恢复时重新调用既有 `calculateCompatibility` 与 `generateDatePlan`，修正到揭晓步骤；不会停留在第 5 题。
+- `test:async-guest` 增至 19 项，覆盖空白初始状态、固定长度答案、邀请 ID 隔离、首个未答题恢复、题号边界、非法答案拒绝和完成态修正。其余 10 组既有测试全部通过。
+- 静态 `out` 通过 `npx serve out -l 4174` 验证。两个独立 Chrome Context 验证了：新邀请先显示落地页并从 `01 / 05` 开始、旧邀请第 5 题进度不串入新邀请、同邀请答完两题刷新到第 3 题、上一题保留答案、第 5 题揭晓进入双人结果、完成后刷新不回第 5 题。
+- 390×844 与 1440×900 下使用 `document.elementFromPoint` 均确认底部点击位置命中真实 `button`，无透明 overlay 遮挡；桌面验证期间无控制台错误。
+- `npm run lint`、`npx tsc --noEmit` 与最终 `npm run build` 均通过；Next.js 16.2.10 静态生成 4/4 页面。沙箱内构建仍受 Windows `spawn EPERM` 限制，按既有方式在沙箱外运行后成功。
+
+## Invite Stage 5A：结果回传与玩家 A 结果入口
+
+- 玩家 B 在双人结果页和共同计划页均可进入“把结果发回给TA”，结果链接由原邀请、玩家 B 五道答案、当前 `selectedPlanId` 和稳定结果生成时间组成，并继续使用 `#result=v1.*` 协议。
+- 回传页提供复制结果链接、Web Share、失败后复制/手动复制降级、微信环境提示、3:4 结果截图卡和“返回共同计划”。
+- 结果卡展示 Date Box 品牌、双方称呼、默契度、今日关键词、共同计划名称和一句纪念文案，不展示五道完整答案。
+- 全新设备打开结果链接会进入玩家 A 只读结果入口，重新调用 `calculateCompatibility` 与 `generateDatePlan`，不信任 payload 中的展示结论或把 `selectedPlanId` 当作推荐结果；页面显示双方称呼、共同/互补期待、推荐路线与隐藏任务。
+- 玩家 A 在结果页“重新开始一份计划”会清除旧的异步主机会话并进入全新邀请创建页，不会退回旧分享页；普通单设备存储不受影响。
+- 同一玩家 B 设备刷新结果 Hash 时继续恢复本地揭晓、盲盒或约会进度，不误切换为玩家 A 入口。
+- `npm run lint`、`npx tsc --noEmit`、12 项访客会话、10 项结果重算与 payload 不信任、19 项邀请/结果分享测试均通过。
+
+## Invite Stage 5B：静态闭环验证
+
+- 已按要求运行 `npx serve out -l 4173`；`out/index.html`、带邀请 Hash 的入口、带结果 Hash 的入口均返回 HTTP 200，首页引用的 8 个 `_next` 静态资源全部返回 200。
+- 新增 22 项异步闭环测试，用两个独立内存存储模拟玩家 A/B：覆盖中文称呼、空称呼、邀请创建/解析、玩家 B 会话刷新、结果回传、玩家 A 重算、多个邀请隔离、重复打开、过期和损坏链接。
+- 微信 User Agent、邀请/结果分享成功与失败降级、Clipboard 边界和邀请二维码继续由既有分享与浏览器边界脚本覆盖。
+- 应用内浏览器与 Chrome 两个独立环境均已建立，但企业网络策略明确阻止访问 `http://127.0.0.1:4173`，并禁止改用其他浏览器表面或绕行；因此未执行真实的两设备点击、375×812、390×844、430×932、1440×900 视觉、溢出、布局跳动、控制台和键盘焦点验收。
+- 静态服务已停止，仓库内临时 npm 缓存已删除；没有把 `serve` 加入项目依赖。
+- 最终全量回归通过：13 项计划、10 项进行中约会、15 项存储/回忆、15 项浏览器边界、12 项单设备流程、19 项邀请协议、20 项主机会话、12 项访客会话、10 项结果重算、22 项异步闭环和 19 项分享检查；最终 `npm run lint`、`npx tsc --noEmit`、`git diff --check` 与 `npm run build` 均通过，静态导出完成 4/4 页面。
+
+## Invite Stage 4A：访客会话与隔离恢复
+
+- 已新增玩家 B 会话模型，复用 `date-box-async-session-v1` 命名空间并以 `:guest:<inviteId>` 隔离每份邀请，不覆盖主持人会话或其他邀请。
+- 恢复时校验邀请 ID、步骤、逐题答案和下游计划状态；玩家 A 答案与固定偏好始终以当前邀请链接为准，不信任本机缓存副本。
+- 已支持从 `AsyncResultPayload` 建立结果态，为结果链接和完成后的刷新恢复保留统一数据入口。
+- 新增 `test:async-guest` 12 项检查，覆盖键隔离、局部答题恢复、损坏数据、邀请 ID 错配、非法答案和结果态初始化。
+- 本阶段 `test:async-guest`、`npx tsc --noEmit` 与 `npm run build` 均通过；构建在沙箱内因 Windows `spawn EPERM` 无法启动 TypeScript 子进程，按既有环境规则在沙箱外重跑后完成静态生成。
+
+## Invite Stage 4B：玩家 B 答题、揭晓与共同计划
+
+- 已用正式 `InviteLandingScreen` 替换邀请占位页：展示邀请人称呼、约 2 分钟、无需登录、提交前答案密封和精确有效时间，不展示玩家 A 答案、心情、默契预测或推荐计划。
+- 玩家 B 仅完成五道默契题，复用 `QuizScreen` 并使用“轮到你写下期待”“不要猜TA的答案，只选你真正想要的。”和“一起揭晓答案”文案；不重复选择时间、预算、距离或关系阶段。
+- 完成后继续调用既有 `calculateCompatibility` 与 `generateDatePlan`，结果包含默契度、共同期待、互补期待、今晚建议和确定性的推荐计划；算法仅增加可选双方称呼参数，原单设备调用保持默认文案。
+- 已新增约 2 秒双轨汇合过渡，依次显示三条指定分析文案；随后结果页展示双方称呼并直接进入现有 `MysteryBoxScreen`、`DatePlanScreen`、`ActiveDateScreen` 与 `MemoryCardScreen`，不会进入 Handoff。
+- 玩家 B 完成后将当前 Hash 替换为校验过的 `#result=v1.*`，本机会话同时保存结果、盲盒、计划、进行中约会与回忆进度；邀请 Hash 和结果 Hash 刷新均可恢复。
+- 过期与损坏链接使用正式阻断文案和指定按钮，不挂载答题流程。
+- 本阶段 `npm run lint`、`npx tsc --noEmit`、19 项邀请协议测试、20 项主机会话测试、12 项访客会话测试、13 项计划算法测试与 `npm run build` 均通过。
+
+## Invite Stage 4C：最终回归与验收说明
+
+- 完整命令行回归通过：13 项计划生成、10 项进行中约会、15 项存储与回忆卡、15 项浏览器边界、12 项单设备流程边界、19 项邀请协议、20 项主机会话、12 项访客会话及 14 项分享检查。
+- 最终 `npm run lint`、`npx tsc --noEmit`、`git diff --check` 与 `npm run build` 均通过；Next.js 16.2.10 完成 TypeScript 检查并静态生成 4/4 页面。
+- 应用内浏览器已成功连接，但打开 `127.0.0.1` 邀请链接时浏览器审批服务中断并阻止导航；已按安全规则停止浏览器尝试，因此本阶段不声明完成 390×844 / 1440×900 的真实视觉、溢出、布局跳动、控制台、键盘焦点或完整点击验收。
+- React 复核确认新增交互使用语义元素、计时器均清理、无新增 `any` 或模块顶层 `window` / `localStorage`；新增页面组件均低于 300 行。
+
+## Invite Stage 3A：正式分享能力
+
+- 已使用隔离无头 Edge 完成真实浏览器验证：375×812、390×844 与 1440×900 均无横向溢出或控制台错误；手机截图模式中的 3:4 卡片为 330×440，完整位于一屏内，二维码为 122×122 的清晰 SVG，导航和卡外操作隐藏且底部退出有效。
+- 已验证中文、英文及空称呼回退、长链接不进入卡片正文、系统分享失败后的手动复制降级，以及修改邀请返回介绍页并显示旧链接仍可能访问的提示。
+- Stage 3 最终回归包含原有 5 组单设备测试、19 项邀请协议测试、20 项主持人会话测试及 14 项分享测试；`npm run lint`、`npx tsc --noEmit` 和最终 `npm run build` 均通过，`out` 静态目录已重新生成。
+
+- 已安装唯一新增依赖 `qrcode.react@4.2.0`；未引入截图、海报、Canvas 编辑器或其他大型库。安装使用的仓库内临时 npm 缓存已删除。
+- 已新增 3:4 `InviteShareCard`：包含品牌、空称呼“有人”回退、双轨迹视觉、邀请提示、有效时间、实际站点短域名和完整邀请 URL 的 SVG 二维码；不显示玩家 A 答案或完整长链接。
+- 已新增正式 `InviteShareScreen`：支持复制链接、Web Share、失败自动复制、手动复制输入、微信环境建议、截图模式和“修改我的选择”。
+- 截图模式使用页面内固定布局，不依赖 Fullscreen API；隐藏导航/操作区、垂直居中卡片，并提供底部退出区域。
+- 修改邀请会保留称呼、偏好和五道答案，清空当前链接并重新生成新 ID/时间；会话持久化旧链接风险标记并展示提示。
+- 新增 `test:sharing` 14 项检查，覆盖固定分享数据、Web Share 成功/失败、微信 UA、站点域名、有效时间和带白边高对比度 SVG 二维码输出。
+
+## Invite Stage 2A：主持人会话基础
+
+- 已定义 `create-intro → mood → preferences → host-quiz → generating → share-placeholder` 主持人流程状态，继续使用独立键 `date-box-async-session-v1`。
+- 已实现异步会话序列化、损坏数据拒绝、称呼 trim/长度限制、偏好与逐题答案 ID 校验，以及刷新后的步骤修正。
+- 已实现 `crypto.randomUUID()` 优先、`crypto.getRandomValues()` UUID v4 降级的安全前端邀请 ID 生成；不使用 `Math.random()`。
+- 根据 Stage 2 的可选字段要求，空称呼现在是合法 payload，填写后的称呼仍限制为最多 12 个字符。
+
+## Invite Stage 2B：首页与玩家 A 创建流程
+
+- Welcome 主标题已更新为“今晚，想和TA怎么度过？”，新增视觉主入口“邀请TA一起计划”和次入口“一起用这部手机”；移动端纵向排列、桌面端双卡并排。
+- 普通入口仍进入现有 `DateGame` 单设备状态机；邀请入口进入独立 `AsyncHostFlow`，返回首页不会清空任一模式的进度。
+- 已新增可选称呼介绍页，双方称呼最多 12 个字符、提交时 trim，并展示链接包含固定选择及不得填写敏感信息的隐私说明。
+- 玩家 A 依次完成心情、四项条件和五道问答；通过可选文案 props 直接复用 `MoodScreen`、`PreferencesScreen` 与 `QuizScreen`。
+- 完成后生成唯一 ID、48 小时有效 payload 与 `#invite=v1.*` 链接，保存到独立异步会话并进入分享页占位；未实现正式分享卡或玩家 B 页面。
+- 顶层入口在无 Hash 时可恢复有意义的异步会话；服务器与 hydration 首帧继续使用统一 loading 状态。
+
+## Invite Stage 2 验证说明
+
+- `test:async-host` 覆盖会话初始化、中文称呼 trim、损坏/错误版本/超长称呼/非法答案拒绝、生成中恢复、原生与安全降级 UUID、48 小时 payload、邀请 URL 还原和两类存储键隔离。
+- `npm run lint`、`npx tsc --noEmit`、`test:async-invite` 以及原有五组回归脚本全部通过；Stage 2A、Stage 2B 与提交前最终 `npm run build` 均成功，`out/index.html` 已重新生成。
+- 当前环境未提供可调用的浏览器控制工具或 `agent-browser` CLI，因此未执行真实的 390×844 / 1440×900 点击与视觉验收，也不声明已检查视觉溢出、布局跳动或浏览器控制台。
+
+## Invite Stage 1A：数据协议与编解码
+
+- 已新增异步邀请与结果 payload 类型、48 小时默认有效期，以及独立存储键 `date-box-async-session-v1`；普通模式继续使用 `date-box-game-state-v1`。
+- 已实现 JSON + UTF-8 + Base64 URL-safe 编解码、固定 `#invite=v1.*` / `#result=v1.*` Hash 协议、显式 base URL 链接生成和原 Hash 移除。
+- 已对字段完整性、昵称长度、五题答案、偏好 ID、计划 ID、版本、时间与过期状态进行入口前校验；错误只返回用户可读原因。
+- 已新增 `test:async-invite`，覆盖中英文昵称、空昵称、损坏数据、过期数据、错误版本、非法答案、超长昵称和正常结果 payload。
+- 本阶段尚未开发玩家 A / 玩家 B 正式异步页面，也未写入任何异步会话数据。
+
+## Invite Stage 1B：Hash 入口识别
+
+- 已新增顶层 `AppEntry` 客户端边界；服务端预渲染与首次客户端渲染都使用相同加载占位，挂载后才读取 `window.location.hash`，避免 hydration 错误。
+- 无 Hash 和无关 Hash 继续挂载现有 `DateGame`，因此原有 localStorage 恢复逻辑与欢迎页到回忆卡的单设备流程保持不变。
+- 有效 `invite`、有效 `result`、过期邀请和无效链接分别显示 Stage 1 占位内容；尚未开发正式异步玩家页面。
+- 入口识别只读取 URL，不写入 `date-box-game-state-v1` 或预留的 `date-box-async-session-v1`。
+
+## Invite Stage 1 验证
+
+- `npm run test:async-invite`：19 项通过，覆盖中英文昵称、空/超长昵称、损坏 Base64、损坏 JSON、过期数据、错误版本、答案数量、非法答案 ID、非法计划 ID、URL 原 Hash 移除与正常结果还原。
+- 原有 `test:plans`、`test:active-date`、`test:memory-storage`、`test:browser-boundaries`、`test:flow-boundaries` 全部通过，单设备状态、恢复和完整流程边界未回归。
+- `npm run lint`：通过；`npx tsc --noEmit`：通过。
+- 两个开发阶段均执行 `npm run build` 并通过；最终 Next.js 16.2.10 静态生成 4/4 页面，`out/index.html` 已生成。
+- 本阶段未进行真实浏览器视觉验收，因此不声明完成 390×844 或 1440×900 视口检查；占位 UI 的正式视觉精修不在 Invite Stage 1 范围内。
+
 ## Current stage
 
 当前版本：v1.0.0

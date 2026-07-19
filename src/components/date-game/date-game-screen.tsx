@@ -43,6 +43,7 @@ interface DateGameScreenProps {
   onSaveMemory: () => void;
   onCopyResult: (success: boolean) => void;
   onRequestReset: () => void;
+  onCreateInvite: () => void;
 }
 
 export function DateGameScreen({
@@ -70,6 +71,7 @@ export function DateGameScreen({
   onSaveMemory,
   onCopyResult,
   onRequestReset,
+  onCreateInvite,
 }: DateGameScreenProps) {
   const selectedPlan = datePlans.find(
     (plan) => plan.id === gameState.selectedPlanId,
@@ -77,7 +79,12 @@ export function DateGameScreen({
 
   switch (gameState.step) {
     case "welcome":
-      return <WelcomeScreen onStart={() => onStepChange("mood")} />;
+      return (
+        <WelcomeScreen
+          onInvite={onCreateInvite}
+          onStart={() => onStepChange("mood")}
+        />
+      );
     case "mood":
       return (
         <MoodScreen
@@ -183,6 +190,11 @@ export function DateGameScreen({
         <MysteryBoxScreen onOpen={onMysteryBoxOpen} />
       );
     default:
-      return <WelcomeScreen onStart={() => onStepChange("mood")} />;
+      return (
+        <WelcomeScreen
+          onInvite={onCreateInvite}
+          onStart={() => onStepChange("mood")}
+        />
+      );
   }
 }

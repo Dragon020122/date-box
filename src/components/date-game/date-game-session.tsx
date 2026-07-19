@@ -20,6 +20,7 @@ interface DateGameSessionProps {
   initialNotice: string | null;
   saveState: (state: DateGameState) => boolean;
   clearStorage: () => boolean;
+  onCreateInvite: () => void;
 }
 
 export function DateGameSession({
@@ -28,6 +29,7 @@ export function DateGameSession({
   initialNotice,
   saveState,
   clearStorage,
+  onCreateInvite,
 }: DateGameSessionProps) {
   const controller = useDateGameController({
     initialState,
@@ -129,6 +131,7 @@ export function DateGameSession({
       onSaveMemory={controller.handleSaveMemory}
       onCopyResult={controller.handleCopyResult}
       onRequestReset={controller.requestReset}
+      onCreateInvite={onCreateInvite}
     />
   );
 

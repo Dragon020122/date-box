@@ -16,9 +16,19 @@ interface QuizScreenProps {
   player: QuizPlayer;
   answers: string[];
   initialQuestionIndex?: number;
+  questionIndex?: number;
+  onQuestionIndexChange?: (questionIndex: number) => void;
   onAnswer: (questionIndex: number, answerId: string) => void;
   onExit: () => void;
-  onComplete: () => void;
+  onComplete: (questionIndex: number, answerId: string) => boolean | void;
+  disableBackAtFirstQuestion?: boolean;
+  copy?: Partial<{
+    label: string;
+    title: string;
+    description: string;
+    exitLabel: string;
+    completeLabel: string;
+  }>;
 }
 
 const playerCopy: Record<
@@ -43,19 +53,24 @@ export function QuizScreen({
   player,
   answers,
   initialQuestionIndex = 0,
+  questionIndex: controlledQuestionIndex,
+  onQuestionIndexChange,
   onAnswer,
   onExit,
   onComplete,
+  disableBackAtFirstQuestion = false,
+  copy: copyOverrides,
 }: QuizScreenProps) {
-  const [questionIndex, setQuestionIndex] = useState(() =>
+  const [internalQuestionIndex, setInternalQuestionIndex] = useState(() =>
     Math.min(
       quizQuestions.length - 1,
       Math.max(0, initialQuestionIndex),
     ),
   );
+  const questionIndex = controlledQuestionIndex ?? internalQuestionIndex;
   const navigationLockedRef = useRef(false);
   const shouldReduceMotion = useReducedMotion();
-  const copy = playerCopy[player];
+  const copy = { ...playerCopy[player], ...copyOverrides };
   const question = quizQuestions[questionIndex];
   const selectedAnswer = answers[questionIndex] ?? "";
   const isLastQuestion = questionIndex === quizQuestions.length - 1;
@@ -65,6 +80,13 @@ export function QuizScreen({
     navigationLockedRef.current = false;
   }, [questionIndex]);
 
+  function moveToQuestion(nextQuestionIndex: number) {
+    if (controlledQuestionIndex === undefined) {
+      setInternalQuestionIndex(nextQuestionIndex);
+    }
+    onQuestionIndexChange?.(nextQuestionIndex);
+  }
+
   function handleBack() {
     if (navigationLockedRef.current) {
       return;
@@ -72,11 +94,15 @@ export function QuizScreen({
     navigationLockedRef.current = true;
 
     if (questionIndex === 0) {
+      if (disableBackAtFirstQuestion) {
+        navigationLockedRef.current = false;
+        return;
+      }
       onExit();
       return;
     }
 
-    setQuestionIndex((currentIndex) => currentIndex - 1);
+    moveToQuestion(questionIndex - 1);
   }
 
   function handleContinue() {
@@ -86,11 +112,14 @@ export function QuizScreen({
     navigationLockedRef.current = true;
 
     if (isLastQuestion) {
-      onComplete();
+      const didComplete = onComplete(questionIndex, selectedAnswer);
+      if (didComplete === false) {
+        navigationLockedRef.current = false;
+      }
       return;
     }
 
-    setQuestionIndex((currentIndex) => currentIndex + 1);
+    moveToQuestion(questionIndex + 1);
   }
 
   const playerAccent = player === "playerA" ? "text-pink-600" : "text-purple-500";
@@ -182,9 +211,9 @@ export function QuizScreen({
                       "border-white/80 bg-white/42 text-text-secondary transition-[transform,border-color,background-color,color,box-shadow] duration-200",
                       "hover:border-pink-200 hover:bg-white/65 active:scale-[0.99] active:bg-pink-50/70",
                       selected &&
-                        player === "playerA"
+                        (player === "playerA"
                           ? "border-pink-400 bg-pink-50/90 text-text-primary shadow-[0_14px_36px_rgba(105,62,84,0.12)]"
-                          : "border-purple-400 bg-purple-100/75 text-text-primary shadow-[0_14px_36px_rgba(105,62,84,0.1)]",
+                          : "border-purple-400 bg-purple-100/75 text-text-primary shadow-[0_14px_36px_rgba(105,62,84,0.1)]"),
                     )}
                   >
                     {option.label}
@@ -205,16 +234,20 @@ export function QuizScreen({
       </div>
 
       <MobileActionBar>
-        <SecondaryButton onClick={handleBack} className="w-full sm:w-auto">
+        <SecondaryButton
+          onClick={handleBack}
+          disabled={disableBackAtFirstQuestion && questionIndex === 0}
+          className="pointer-events-auto w-full sm:w-auto"
+        >
           <ArrowLeft aria-hidden="true" className="size-4.5" />
-          {questionIndex === 0 ? copy.exitLabel : "上一题"}
+          {questionIndex === 0 && !disableBackAtFirstQuestion ? copy.exitLabel : "上一题"}
         </SecondaryButton>
         <PrimaryButton
           onClick={handleContinue}
           disabled={!selectedAnswer}
-          className="w-full sm:w-auto"
+          className="pointer-events-auto w-full sm:w-auto"
         >
-          {isLastQuestion ? "藏好我的答案" : "下一题"}
+          {isLastQuestion ? copy.completeLabel ?? "藏好我的答案" : "下一题"}
           <ArrowRight aria-hidden="true" className="size-4.5" />
         </PrimaryButton>
       </MobileActionBar>

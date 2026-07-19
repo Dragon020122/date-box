@@ -60,16 +60,18 @@ function getComplementaryInsight(
   questionIndex: number,
   playerAAnswer: string,
   playerBAnswer: string,
+  playerAName: string,
+  playerBName: string,
 ): string {
-  const playerALabel = getOptionLabel(playerAAnswer);
-  const playerBLabel = getOptionLabel(playerBAnswer);
+  const playerAChoice = getOptionLabel(playerAAnswer);
+  const playerBChoice = getOptionLabel(playerBAnswer);
 
   const templates = [
-    `你更想把时间留给「${playerALabel}」，TA 更期待「${playerBLabel}」，两个片段可以自然接成今晚的路线。`,
-    `你想留下「${playerALabel}」，TA 想记住「${playerBLabel}」，一份回忆可以同时拥有两种形状。`,
-    `你期待的惊喜是「${playerALabel}」，TA 更心动于「${playerBLabel}」，可以把一个写进计划，另一个留作隐藏彩蛋。`,
-    `你偏向「${playerALabel}」的节奏，TA 更喜欢「${playerBLabel}」，先顺着一个人开始，再把选择权交给对方。`,
-    `你更想收到「${playerALabel}」，TA 更期待「${playerBLabel}」，今晚可以用两个小动作互相回应。`,
+    `${playerAName}更想把时间留给「${playerAChoice}」，${playerBName}更期待「${playerBChoice}」，两个片段可以自然接成今晚的路线。`,
+    `${playerAName}想留下「${playerAChoice}」，${playerBName}想记住「${playerBChoice}」，一份回忆可以同时拥有两种形状。`,
+    `${playerAName}期待的惊喜是「${playerAChoice}」，${playerBName}更心动于「${playerBChoice}」，可以把一个写进计划，另一个留作隐藏彩蛋。`,
+    `${playerAName}偏向「${playerAChoice}」的节奏，${playerBName}更喜欢「${playerBChoice}」，先顺着一个人开始，再把选择权交给对方。`,
+    `${playerAName}更想收到「${playerAChoice}」，${playerBName}更期待「${playerBChoice}」，今晚可以用两个小动作互相回应。`,
   ];
 
   return templates[questionIndex] ?? templates[0];
@@ -145,7 +147,10 @@ function getResultCopy(displayScore: number): Pick<CompatibilityResult, "title" 
 export function calculateCompatibility(
   playerAAnswers: string[],
   playerBAnswers: string[],
+  labels: { playerA?: string; playerB?: string } = {},
 ): CompatibilityResult {
+  const playerALabel = labels.playerA?.trim() || "你";
+  const playerBLabel = labels.playerB?.trim() || "TA";
   const answerPairs = Array.from(
     { length: COMPATIBILITY_QUESTION_COUNT },
     (_, index) => [playerAAnswers[index] ?? "", playerBAnswers[index] ?? ""] as const,
@@ -183,14 +188,20 @@ export function calculateCompatibility(
   if (sharedInsights.length === 0) {
     const [playerAMemory, playerBMemory] = answerPairs[1];
     sharedInsights.push(
-      `你们都想让今晚留下具体的记忆：你更靠近「${getOptionLabel(playerAMemory)}」，TA 更靠近「${getOptionLabel(playerBMemory)}」。`,
+      `你们都想让今晚留下具体的记忆：${playerALabel}更靠近「${getOptionLabel(playerAMemory)}」，${playerBLabel}更靠近「${getOptionLabel(playerBMemory)}」。`,
     );
   }
 
   const complementaryInsights = mismatchedPairs
     .slice(0, 2)
     .map(({ questionIndex, playerAAnswer, playerBAnswer }) =>
-      getComplementaryInsight(questionIndex, playerAAnswer, playerBAnswer),
+      getComplementaryInsight(
+        questionIndex,
+        playerAAnswer,
+        playerBAnswer,
+        playerALabel,
+        playerBLabel,
+      ),
     );
 
   if (complementaryInsights.length === 0) {

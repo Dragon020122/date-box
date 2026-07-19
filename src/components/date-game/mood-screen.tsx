@@ -84,6 +84,13 @@ interface MoodScreenProps {
   onSelect: (mood: MoodId) => void;
   onBack: () => void;
   onContinue: () => void;
+  copy?: Partial<{
+    eyebrow: string;
+    title: string;
+    description: string;
+    backLabel: string;
+    continueLabel: string;
+  }>;
 }
 
 export function MoodScreen({
@@ -91,6 +98,7 @@ export function MoodScreen({
   onSelect,
   onBack,
   onContinue,
+  copy,
 }: MoodScreenProps) {
   const selectedLabel = moodOptions.find((option) => option.id === selectedMood)?.title;
 
@@ -99,16 +107,16 @@ export function MoodScreen({
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
         <div>
           <p className="text-xs font-semibold tracking-[0.18em] text-pink-600 sm:text-sm">
-            01 · TONIGHT&apos;S MOOD
+            {copy?.eyebrow ?? "01 · TONIGHT'S MOOD"}
           </p>
           <h1
             id="mood-title"
             className="mt-2 max-w-3xl text-[clamp(1.8rem,8vw,3rem)] font-semibold leading-[1.15] tracking-[-0.035em] text-text-primary sm:mt-4"
           >
-            今天，你们想要哪一种心动？
+            {copy?.title ?? "今天，你们想要哪一种心动？"}
           </h1>
           <p className="mt-1.5 text-sm leading-6 text-text-secondary sm:mt-3 sm:text-base sm:leading-7">
-            先选一种今晚最想靠近的感觉。
+            {copy?.description ?? "先选一种今晚最想靠近的感觉。"}
           </p>
         </div>
 
@@ -139,14 +147,14 @@ export function MoodScreen({
       <MobileActionBar>
         <SecondaryButton onClick={onBack} className="w-full sm:w-auto">
           <ArrowLeft aria-hidden="true" className="size-4.5" />
-          返回欢迎页
+          {copy?.backLabel ?? "返回欢迎页"}
         </SecondaryButton>
         <PrimaryButton
           onClick={onContinue}
           disabled={selectedMood === null}
           className="w-full sm:w-auto"
         >
-          就选这个
+          {copy?.continueLabel ?? "就选这个"}
           <ArrowRight aria-hidden="true" className="size-4.5" />
         </PrimaryButton>
       </MobileActionBar>

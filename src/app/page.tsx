@@ -1,5 +1,5 @@
-import { DateGame } from "@/components/date-game/date-game";
+import { AppEntry } from "@/components/date-game/app-entry";
 
 export default function HomePage() {
-  return <DateGame />;
+  return <AppEntry />;
 }

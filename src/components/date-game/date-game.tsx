@@ -15,7 +15,11 @@ import {
   type DateGameState,
 } from "@/types/date-game";
 
-export function DateGame() {
+interface DateGameProps {
+  onCreateInvite: () => void;
+}
+
+export function DateGame({ onCreateInvite }: DateGameProps) {
   const storage = useLocalStorage<DateGameState>({
     key: DATE_GAME_STORAGE_KEY,
     parse: parseDateGameStorage,
@@ -50,6 +54,7 @@ export function DateGame() {
       initialNotice={initialNotice}
       saveState={storage.save}
       clearStorage={storage.clear}
+      onCreateInvite={onCreateInvite}
     />
   );
 }
